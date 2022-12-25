@@ -45,10 +45,10 @@ self.onmessage = event => {
   port.postMessage({ download: downloadUrl })
 }
 
-function createStream (port) {
+function createStream(port) {
   // ReadableStream is only supported by chrome 52
   return new ReadableStream({
-    start (controller) {
+    start(controller) {
       // When we receive data on the messageChannel, we write
       port.onmessage = ({ data }) => {
         if (data === 'end') {
@@ -63,7 +63,7 @@ function createStream (port) {
         controller.enqueue(data)
       }
     },
-    cancel (reason) {
+    cancel(reason) {
       console.log('user aborted', reason)
       port.postMessage({ abort: true })
     }
@@ -82,7 +82,7 @@ self.onfetch = event => {
 
   if (!hijacke) return null
 
-  const [ stream, data, port ] = hijacke
+  const [stream, data, port] = hijacke
 
   map.delete(url)
 

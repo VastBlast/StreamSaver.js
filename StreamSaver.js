@@ -2,7 +2,7 @@
 
 /* global chrome location ReadableStream define MessageChannel TransformStream */
 
-;((name, definition) => {
+; ((name, definition) => {
   typeof module !== 'undefined'
     ? module.exports = definition()
     : typeof define === 'function' && typeof define.amd === 'object'
@@ -16,7 +16,7 @@
 
   let mitmTransporter = null
   let supportsTransferable = false
-  const test = fn => { try { fn() } catch (e) {} }
+  const test = fn => { try { fn() } catch (e) { } }
   const ponyfill = global.WebStreamsPolyfill || {}
   const isSecureContext = global.isSecureContext
   // TODO: Must come up with a real detection test (#69)
@@ -30,7 +30,7 @@
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
-    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
+    mitm: 'https://vastblast.github.io/StreamSaver.js/mitm.html'
   }
 
   /**
@@ -39,7 +39,7 @@
    * @param  {string} src page to load
    * @return {HTMLIFrameElement} page to load
    */
-  function makeIframe (src) {
+  function makeIframe(src) {
     if (!src) throw new Error('meh')
     const iframe = document.createElement('iframe')
     iframe.hidden = true
@@ -62,7 +62,7 @@
    * @param  {string} src page to load
    * @return {object}     iframe like object
    */
-  function makePopup (src) {
+  function makePopup(src) {
     const options = 'width=200,height=100'
     const delegate = document.createDocumentFragment()
     const popup = {
@@ -70,11 +70,11 @@
       loaded: false,
       isIframe: false,
       isPopup: true,
-      remove () { popup.frame.close() },
-      addEventListener (...args) { delegate.addEventListener(...args) },
-      dispatchEvent (...args) { delegate.dispatchEvent(...args) },
-      removeEventListener (...args) { delegate.removeEventListener(...args) },
-      postMessage (...args) { popup.frame.postMessage(...args) }
+      remove() { popup.frame.close() },
+      addEventListener(...args) { delegate.addEventListener(...args) },
+      dispatchEvent(...args) { delegate.dispatchEvent(...args) },
+      removeEventListener(...args) { delegate.removeEventListener(...args) },
+      postMessage(...args) { popup.frame.postMessage(...args) }
     }
 
     const onReady = evt => {
@@ -116,7 +116,7 @@
     })
   })
 
-  function loadTransporter () {
+  function loadTransporter() {
     if (!mitmTransporter) {
       mitmTransporter = isSecureContext
         ? makeIframe(streamSaver.mitm)
@@ -130,7 +130,7 @@
    * @param  {number} size     deprecated
    * @return {WritableStream<Uint8Array>}
    */
-  function createWriteStream (filename, options, size) {
+  function createWriteStream(filename, options, size) {
     let opts = {
       size: null,
       pathname: null,
@@ -145,7 +145,7 @@
 
     // normalize arguments
     if (Number.isFinite(options)) {
-      [ size, options ] = [ options, size ]
+      [size, options] = [options, size]
       console.warn('[StreamSaver] Deprecated pass an object as 2nd argument when creating a write stream')
       opts.size = size
       opts.writableStrategy = options
@@ -179,12 +179,12 @@
         response.headers['Content-Length'] = opts.size
       }
 
-      const args = [ response, '*', [ channel.port2 ] ]
+      const args = [response, '*', [channel.port2]]
 
       if (supportsTransferable) {
         const transformer = downloadStrategy === 'iframe' ? undefined : {
           // This transformer & flush method is only used by insecure context.
-          transform (chunk, controller) {
+          transform(chunk, controller) {
             if (!(chunk instanceof Uint8Array)) {
               throw new TypeError('Can only write Uint8Arrays')
             }
@@ -196,7 +196,7 @@
               downloadUrl = null
             }
           },
-          flush () {
+          flush() {
             if (downloadUrl) {
               location.href = downloadUrl
             }
@@ -209,7 +209,7 @@
         )
         const readableStream = ts.readable
 
-        channel.port1.postMessage({ readableStream }, [ readableStream ])
+        channel.port1.postMessage({ readableStream }, [readableStream])
       }
 
       channel.port1.onmessage = evt => {
@@ -259,7 +259,7 @@
     let chunks = []
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
-      write (chunk) {
+      write(chunk) {
         if (!(chunk instanceof Uint8Array)) {
           throw new TypeError('Can only write Uint8Arrays')
         }
@@ -291,9 +291,11 @@
           downloadUrl = null
         }
       },
-      close () {
+      close(returnBlobIfFallback = false) {
         if (useBlobFallback) {
           const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
+          if (returnBlobIfFallback) return blob;
+
           const link = document.createElement('a')
           link.href = URL.createObjectURL(blob)
           link.download = filename
@@ -302,7 +304,7 @@
           channel.port1.postMessage('end')
         }
       },
-      abort () {
+      abort() {
         chunks = []
         channel.port1.postMessage('abort')
         channel.port1.onmessage = null
