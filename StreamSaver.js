@@ -135,7 +135,8 @@
       size: null,
       pathname: null,
       writableStrategy: undefined,
-      readableStrategy: undefined
+      readableStrategy: undefined,
+      onBlob: undefined
     }
 
     let bytesWritten = 0 // by StreamSaver.js (not the service worker)
@@ -291,15 +292,20 @@
           downloadUrl = null
         }
       },
-      close(returnBlobIfFallback = false) {
+      close() {
         if (useBlobFallback) {
           const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
-          if (returnBlobIfFallback) return blob;
 
-          const link = document.createElement('a')
-          link.href = URL.createObjectURL(blob)
-          link.download = filename
-          link.click()
+          function triggerDownload() {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = filename
+            link.click()
+          }
+
+          if (typeof opts.onBlob === 'function') return opts.onBlob(blob, triggerDownload);
+
+          triggerDownload();
         } else {
           channel.port1.postMessage('end')
         }
