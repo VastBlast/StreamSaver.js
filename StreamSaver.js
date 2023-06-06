@@ -139,6 +139,12 @@
       onBlob: undefined
     }
 
+    const fileSizeMb = options && options.size ? options.size / 1000000 : 0;
+    // if size is greater than 250mb and browser is firefox or uses the same engine as firefox, force useBlobFallback
+    if (fileSizeMb > 250 && navigator && (navigator.userAgent.includes('Gecko/') || navigator.userAgent.includes('Firefox/'))) {
+      useBlobFallback = true
+    }
+
     let bytesWritten = 0 // by StreamSaver.js (not the service worker)
     let downloadUrl = null
     let channel = null
@@ -294,7 +300,10 @@
       },
       close() {
         if (useBlobFallback) {
-          const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
+
+          //const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
+
+          const blob = chunksToBlob(chunks);
 
           function triggerDownload() {
             const link = document.createElement('a')
@@ -322,4 +331,28 @@
   }
 
   return streamSaver
-})
+});
+
+
+// used to process the chunks array in smaller portions, creating smaller Blobs and then combining them.
+// fixes crash in Safari when downloading large files
+function chunksToBlob(chunks, maxChunkSizeMb = 10) { // 10MB default, (adjust as needed)
+  const MAX_CHUNK_SIZE = maxChunkSizeMb * 1024 * 1024;
+  const chunkedBlobs = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const currentChunk = chunks[i];
+    const currentChunkSize = currentChunk.length;
+
+    let offset = 0;
+
+    while (offset < currentChunkSize) {
+      const chunkSize = Math.min(MAX_CHUNK_SIZE, currentChunkSize - offset);
+      const chunk = currentChunk.subarray(offset, offset + chunkSize);
+      chunkedBlobs.push(new Blob([chunk]));
+      offset += chunkSize;
+    }
+  }
+
+  return new Blob(chunkedBlobs, { type: 'application/octet-stream; charset=utf-8' });
+}
