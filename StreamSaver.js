@@ -140,8 +140,8 @@
     }
 
     const fileSizeMb = options && options.size ? options.size / 1000000 : 0;
-    // if size is greater than 250mb and browser is firefox or uses the same engine as firefox, force useBlobFallback
-    if (fileSizeMb > 250 && navigator && (navigator.userAgent.includes('Gecko/') || navigator.userAgent.includes('Firefox/'))) {
+    // if size is greater than 300mb and browser is firefox or uses the same engine as firefox, force useBlobFallback
+    if (fileSizeMb > 300 && fileSizeMb < 3000 && navigator && (navigator.userAgent.includes('Gecko/') || navigator.userAgent.includes('Firefox/'))) {
       useBlobFallback = true
     }
 
