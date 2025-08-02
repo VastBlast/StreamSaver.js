@@ -8,7 +8,7 @@
     : typeof define === 'function' && typeof define.amd === 'object'
       ? define(definition)
       : this[name] = definition()
-})('streamSaver', () => {
+})('getStreamSaver', () => {
   'use strict'
 
   const global = typeof window === 'object' ? window : this
@@ -330,7 +330,15 @@
     }, opts.writableStrategy)
   }
 
-  return streamSaver
+  return (opts = {}) => {
+    if (opts.mitm) {
+      streamSaver.mitm = opts.mitm
+    }
+    if (opts.WritableStream) {
+      streamSaver.WritableStream = opts.WritableStream
+    }
+    return streamSaver
+  }
 });
 
 
